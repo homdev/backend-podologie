@@ -7,8 +7,10 @@ WORKDIR /app
 # Copier les fichiers de l'application dans le conteneur
 COPY . /app
 
-# Installer les dépendances système requises
-RUN apt-get update && apt-get install -y libgl1-mesa-glx
+# Installer les dépendances système requises pour OpenCV
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0
 
 # Installer les dépendances Python
 RUN pip install --no-cache-dir -r requirements.txt
