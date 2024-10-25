@@ -1,4 +1,5 @@
 Flask==2.0.1
+Flask-Cors
 opencv-python
 matplotlib
 Werkzeug==2.0.1
