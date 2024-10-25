@@ -1,9 +1,11 @@
-[phases]
-setup = "apt-get update && apt-get install -y python3 python3-pip"
+[phases.setup]
+commands = [
+  "apt-get update",
+  "apt-get install -y python3 python3-pip"
+]
 
-[build]
-# Installe les dépendances Python à partir de `requirements.txt`
-install = "pip3 install -r requirements.txt"
+[phases.install]
+commands = ["pip3 install -r requirements.txt"]
 
-# Démarre votre application
-start = "python3 app.py"  # Remplacez `app.py` par le nom de votre fichier principal si nécessaire
+[phases.start]
+commands = ["python3 app.py"] # Remplacez `app.py` par le nom de votre fichier principal si nécessaire
