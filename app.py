@@ -10,7 +10,7 @@ app.config['UPLOAD_FOLDER'] = 'static/upload/'
 app.config['PROCESSED_FOLDER'] = 'static/processed/'
 
 # Utiliser une variable d'environnement pour les origines CORS
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,https://dashboard-podologie.netlify.app/,https://backend-podologie-production.up.railway.app').split(',')
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,https://dashboard-podologie.netlify.app,https://backend-podologie-production.up.railway.app').split(',')
 
 # CORS pour permettre les requêtes provenant des origines autorisées
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
