@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from app.routes import create_routes
+import os
 
 app = Flask(__name__)
 
@@ -8,8 +9,11 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/upload/'
 app.config['PROCESSED_FOLDER'] = 'static/processed/'
 
-# CORS pour permettre les requêtes provenant de 'http://localhost:3000'
-CORS(app, resources={r"/*": {"origins": "https://671be00c81a5f4a93bd4891e--dashboard-podologie.netlify.app/"}})
+# Utiliser une variable d'environnement pour les origines CORS
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'https://671be00c81a5f4a93bd4891e--dashboard-podologie.netlify.app').split(',')
+
+# CORS pour permettre les requêtes provenant des origines autorisées
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 
 # Créer les routes de l'API
 create_routes(app)
