@@ -9,7 +9,7 @@ app.config['UPLOAD_FOLDER'] = 'static/upload/'
 app.config['PROCESSED_FOLDER'] = 'static/processed/'
 
 # CORS pour permettre les requêtes provenant de 'http://localhost:3000'
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/*": {"origins": "https://671be00c81a5f4a93bd4891e--dashboard-podologie.netlify.app/"}})
 
 # Créer les routes de l'API
 create_routes(app)

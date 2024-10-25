@@ -32,11 +32,12 @@ def create_routes(app):
         cv2.imwrite(left_output, left_foot)
         cv2.imwrite(right_output, right_foot)
 
+        # Assurez-vous que le jsonify est dans la fonction
         return jsonify({
             "message": "Image traitée avec succès",
-            "processed_image": f"http://192.168.1.174:5000/processed/{output_filename}",
-            "left_foot": f"http://192.168.1.174:5000/processed/{file_id}_left.jpg",
-            "right_foot": f"http://192.168.1.174:5000/processed/{file_id}_right.jpg"
+            "processed_image": f"{request.host_url}processed/{output_filename}",
+            "left_foot": f"{request.host_url}processed/{file_id}_left.jpg",
+            "right_foot": f"{request.host_url}processed/{file_id}_right.jpg"
         })
 
     @app.route('/process_single_foot/<side>', methods=['POST'])
@@ -63,7 +64,7 @@ def create_routes(app):
 
         return jsonify({
             "message": f"{side.capitalize()} foot processed successfully",
-            "processed_image": f"http://192.168.1.174:5000/processed/{output_filename}"
+            "processed_image": f"{request.host_url}processed/{output_filename}"
         })
 
     @app.route('/processed/<filename>')
