@@ -7,7 +7,8 @@ logger = logging.getLogger(__name__)
 
 def download_model():
     """Télécharge le modèle U2NET depuis Google Drive avec gestion des erreurs"""
-    model_path = "app/models/u2net.pth"
+    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../models/u2net.pth')
+
     try:
         if not os.path.exists(model_path):
             logger.info("Téléchargement du modèle U2NET...")
