@@ -1,19 +1,23 @@
 [phases.setup]
 nixPkgs = [
     'python39',
-    'python39Packages.pip',
     'python39Packages.flask',
     'python39Packages.numpy',
     'python39Packages.pillow',
     'python39Packages.opencv4',
-    'python39Packages.torch',
-    'python39Packages.torchvision',
+    'python39Packages.torch-bin',
+    'python39Packages.torchvision-bin',
     'python39Packages.gunicorn',
     'python39Packages.python-dotenv',
     'python39Packages.flask-cors',
-    'gcc',
-    'pkg-config'
+    'python39Packages.pip',
+    'gcc'
+]
+
+[phases.install]
+cmds = [
+    'python -m pip install --no-cache-dir gdown==4.7.1 transformers==4.30.0'
 ]
 
 [start]
-cmd = 'gunicorn app:app --bind=0.0.0.0:$PORT'
+cmd = 'gunicorn app:app --bind=0.0.0.0:$PORT --workers=2 --timeout=120'
