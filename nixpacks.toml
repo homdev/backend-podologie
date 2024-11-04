@@ -1,9 +1,18 @@
 [phases.setup]
-nixPkgs = ['python39', 'python39Packages.pip', 'gcc', 'pkg-config']
-
-[phases.install]
-cmds = [
-    'python -m pip install --break-system-packages -r requirements.txt'
+nixPkgs = [
+    'python39',
+    'python39Packages.pip',
+    'python39Packages.flask',
+    'python39Packages.numpy',
+    'python39Packages.pillow',
+    'python39Packages.opencv4',
+    'python39Packages.torch',
+    'python39Packages.torchvision',
+    'python39Packages.gunicorn',
+    'python39Packages.python-dotenv',
+    'python39Packages.flask-cors',
+    'gcc',
+    'pkg-config'
 ]
 
 [start]
