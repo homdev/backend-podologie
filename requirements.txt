@@ -2,7 +2,7 @@ Flask==2.1.3
 Flask-Cors==3.0.10
 opencv-python==4.5.5.64
 matplotlib==3.5.2
-Werkzeug==2.1.3
+Werkzeug==2.2.3               # Version mise à jour pour compatibilité
 numpy==1.22.0
 pillow==9.2.0                # Version compatible avec torchvision 0.15.2+cpu
 torch==2.0.1+cpu             # Version stable pour éviter les erreurs de compilation
