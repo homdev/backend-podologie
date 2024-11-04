@@ -139,7 +139,7 @@ def create_routes(app):
 
     @app.route('/health')
     def health_check():
-        model_path = "app/models/u2net.pth"
+        model_path = "models/u2net.pth"
         return jsonify({
             'status': 'healthy',
             'model_loaded': os.path.exists(model_path),
