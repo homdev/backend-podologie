@@ -45,3 +45,5 @@ if __name__ == "__main__":
         app.run(host="0.0.0.0", port=port, debug=debug)
     except Exception as e:
         logger.error(f"Erreur lors du démarrage du serveur: {str(e)}")
+
+        debug = True
