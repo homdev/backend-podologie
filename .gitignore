@@ -1,0 +1,27 @@
+# Environnement virtuel Python
+env/
+.env
+
+# Fichiers de configuration sensibles
+*.env
+config.py
+instance/
+
+# Fichiers de compilation Python
+*.pyc
+__pycache__/
+
+# Dossiers de logs et de données temporaires
+logs/
+*.log
+tmp/
+*.sqlite3
+
+# Fichiers de déploiement et autres
+*.db
+.DS_Store
+
+# Fichiers LFS
+*.pth
+app/models/*.pth
+app/models/u2net.pth
