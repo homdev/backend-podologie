@@ -1,23 +1,11 @@
 [phases.setup]
-nixPkgs = [
-    'python39',
-    'python39Packages.flask',
-    'python39Packages.numpy',
-    'python39Packages.pillow',
-    'python39Packages.opencv4',
-    'python39Packages.torch-bin',
-    'python39Packages.torchvision-bin',
-    'python39Packages.gunicorn',
-    'python39Packages.python-dotenv',
-    'python39Packages.flask-cors',
-    'python39Packages.pip',
-    'gcc'
+commands = [
+  "apt-get update",
+  "apt-get install -y python3 python3-pip"
 ]
 
 [phases.install]
-cmds = [
-    'python -m pip install --no-cache-dir gdown==4.7.1 transformers==4.30.0'
-]
+commands = ["pip3 install -r requirements.txt"]
 
-[start]
-cmd = 'gunicorn app:app --bind=0.0.0.0:$PORT --workers=2 --timeout=120'
+[phases.start]
+commands = ["python3 app.py"] # Remplacez `app.py` par le nom de votre fichier principal si nécessaire
