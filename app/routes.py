@@ -136,3 +136,12 @@ def create_routes(app):
                 'error': 'Erreur serveur critique',
                 'details': 'Une erreur critique est survenue'
             }), 500
+
+    @app.route('/health')
+    def health_check():
+        model_path = "app/models/u2net.pth"
+        return jsonify({
+            'status': 'healthy',
+            'model_loaded': os.path.exists(model_path),
+            'version': '1.0.0'
+        })
