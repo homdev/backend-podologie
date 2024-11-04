@@ -22,7 +22,7 @@ def load_model():
         # Utilisation du chemin absolu correct
         model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/u2net.pth')
         if not os.path.exists(model_path):
-            from app.utils.model_loader import download_model
+            from .model_loader import download_model
             download_model()
         
         u2net = U2NET(3, 1)
