@@ -7,34 +7,24 @@ logger = logging.getLogger(__name__)
 
 def download_model():
     """Télécharge le modèle U2NET depuis Google Drive avec gestion des erreurs"""
-    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'models/u2net.pth')
-
-    try:
-        if not os.path.exists(model_path):
-            logger.info("Téléchargement du modèle U2NET...")
-            os.makedirs(os.path.dirname(model_path), exist_ok=True)
-            
-            # URL correcte du modèle
-            file_id = "11nsdLnQIR2JxxAqnclqZJ7lqINODTANK"
-            url = f"https://drive.google.com/uc?id={file_id}"
-            
-            success = gdown.download(url, model_path, quiet=False)
-            if not success:
-                raise Exception("Échec du téléchargement du modèle")
+    model_path = os.path.join(os.path.dirname(__file__), 'models/u2net.pth')
+    if not os.path.exists(model_path):
+        logger.info("Téléchargement du modèle U2NET...")
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        file_id = "11nsdLnQIR2JxxAqnclqZJ7lqINODTANK"
+        url = f"https://drive.google.com/uc?id={file_id}"
+        try:
+            gdown.download(url, model_path, quiet=False)
             logger.info("Modèle téléchargé avec succès")
-            
-            # Vérification de la compatibilité du modèle
-            try:
-                state_dict = torch.load(model_path, map_location='cpu')
-                logger.info("Modèle chargé avec succès")
-            except Exception as e:
-                logger.error(f"Erreur lors du chargement du modèle: {str(e)}")
-                if os.path.exists(model_path):
-                    os.remove(model_path)
-                raise
-        else:
-            logger.info("Modèle U2NET déjà présent")
+        except Exception as e:
+            logger.error(f"Erreur lors du téléchargement du modèle: {str(e)}")
+            raise
+    else:
+        logger.info("Modèle U2NET déjà présent")
+    # Vérification de la compatibilité du modèle
+    try:
+        torch.load(model_path, map_location='cpu')
     except Exception as e:
-        logger.error(f"Erreur lors du téléchargement du modèle: {str(e)}")
+        logger.error(f"Erreur lors du chargement du modèle: {str(e)}")
+        os.remove(model_path)  # Supprime le fichier si non compatible
         raise
-        
