@@ -10,16 +10,17 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     gcc \
     g++ \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Mise à jour de pip
-RUN pip install --no-cache-dir --upgrade pip
+# Mise à jour de pip et installation des outils de build
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Installation des dépendances principales
+# Installation des dépendances scientifiques principales
 RUN pip install --no-cache-dir \
-    torch==2.0.1 \
-    torchvision==0.15.2 \
-    pillow>=9.0.0
+    numpy==1.22.4 \
+    torch==2.0.1 --extra-index-url https://download.pytorch.org/whl/cpu \
+    torchvision==0.15.2 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Copie et installation des autres dépendances
 COPY requirements.txt .
