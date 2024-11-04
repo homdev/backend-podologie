@@ -12,7 +12,7 @@ def download_model():
         if not os.path.exists(model_path):
             logger.info("Téléchargement du modèle U2NET...")
             os.makedirs(os.path.dirname(model_path), exist_ok=True)
-            file_id = "1xf2gsCU2dQxKDGqw-_Z7CFeAXLHV_NfG"
+            file_id = "11nsdLnQIR2JxxAqnclqZJ7lqINODTANK"
             url = f"https://drive.google.com/uc?id={file_id}"
             success = gdown.download(url, model_path, quiet=False)
             if not success:

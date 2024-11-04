@@ -19,7 +19,7 @@ class ImageProcessingError(Exception):
 def load_model():
     """Charge le modèle U2NET avec gestion des erreurs"""
     try:
-        model_path = os.path.join(os.path.dirname(__file__), 'models/u2net.pth')
+        model_path = os.path.join(os.path.dirname(__file__), 'app/models/u2net.pth')
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Le modèle U2NET n'a pas été trouvé: {model_path}")
         
