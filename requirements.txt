@@ -3,7 +3,7 @@ Flask-Cors
 opencv-python
 matplotlib
 numpy==1.21.0
-pillow==8.3.1
+pillow>=9.0.0
 torch==2.0.1
 torchvision==0.15.2
 werkzeug==2.0.1
