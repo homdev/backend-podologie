@@ -1,6 +1,7 @@
 import os
 import gdown
 import logging
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,16 @@ def download_model():
             if not success:
                 raise Exception("Échec du téléchargement du modèle")
             logger.info("Modèle téléchargé avec succès")
+            
+            # Vérification de la compatibilité du modèle
+            try:
+                state_dict = torch.load(model_path, map_location='cpu')
+                logger.info("Modèle chargé avec succès")
+            except Exception as e:
+                logger.error(f"Erreur lors du chargement du modèle: {str(e)}")
+                if os.path.exists(model_path):
+                    os.remove(model_path)
+                raise
         else:
             logger.info("Modèle U2NET déjà présent")
     except Exception as e:
