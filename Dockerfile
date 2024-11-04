@@ -29,4 +29,4 @@ RUN mkdir -p static/upload static/processed app/models
 ENV PORT=5000
 ENV PYTHONUNBUFFERED=1
 
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:$PORT", "--workers", "2", "--timeout", "120", "--log-file", "-"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "--log-file", "-"]
