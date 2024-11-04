@@ -1,11 +1,10 @@
 [phases.setup]
-nixPkgs = ['python39', 'gcc', 'pkg-config', 'python39Packages.pip']
+nixPkgs = ['python39', 'gcc', 'pkg-config']
 
 [phases.install]
 cmds = [
-    'python -m ensurepip --upgrade',
-    'python -m pip install --upgrade pip',
-    'pip install -r requirements.txt'
+    'python -m pip install --user --upgrade pip',
+    'pip install --user -r requirements.txt'
 ]
 
 [start]
