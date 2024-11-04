@@ -1,34 +1,27 @@
 # Utiliser une image de base avec Python 3
-FROM python:3.10-slim
+FROM python:3.10-slim-buster
 
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Installation des dépendances système et outils de compilation
+# Installation des dépendances système minimales
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    gcc \
-    g++ \
-    python3-dev \
-    build-essential \
-    gfortran \
-    libopenblas-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Mise à jour de pip et installation des outils de build
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir --upgrade pip
 
-# Installation des dépendances scientifiques principales
+# Installation des dépendances avec des wheels pré-compilés
 RUN pip install --no-cache-dir \
+    --only-binary=:all: \
     numpy==1.21.0 \
-    pillow>=9.0.0
-
-# Installation de PyTorch CPU
-RUN pip install --no-cache-dir \
+    pillow>=9.0.0 \
     torch==2.0.1+cpu \
     torchvision==0.15.2+cpu \
-    --index-url https://download.pytorch.org/whl/cpu
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple
 
 # Installation des autres dépendances
 COPY requirements.txt .
