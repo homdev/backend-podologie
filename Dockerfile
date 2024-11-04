@@ -12,11 +12,12 @@ RUN pip install --no-cache-dir --upgrade pip
 
 # Mise à jour avec les versions compatibles de torch et torchvision
 RUN pip install --no-cache-dir \
-    numpy==1.21.0 \
-    pillow==8.3.1 \
+    numpy==1.22.0 \
+    pillow==9.2.0 \
     torch==2.0.1+cpu \
     torchvision==0.15.2+cpu \
     --find-links https://download.pytorch.org/whl/torch_stable.html
+
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
