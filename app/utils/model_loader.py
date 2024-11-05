@@ -15,7 +15,7 @@ def download_model():
     
     if not os.path.exists(model_path):
         logger.info("Téléchargement du modèle U2NET...")
-        url = "https://www.dropbox.com/scl/fi/o97mt8jknqnk7umggkn1k/u2net.pth?rlkey=wsnfn5tusvxm7ec1vdjac07og&st=i3yhdwqs&dl=0"  # Remplacez par l'URL directe
+        url = "https://www.dropbox.com/scl/fi/o97mt8jknqnk7umggkn1k/u2net.pth?rlkey=wsnfn5tusvxm7ec1vdjac07og&dl=1"  # Remplacez par l'URL directe
         try:
             gdown.download(url, model_path, quiet=False)
             logger.info("Modèle téléchargé avec succès")
