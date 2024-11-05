@@ -25,7 +25,7 @@ def validate_file(file) -> Tuple[bool, str]:
     return True, ""
 
 def create_routes(app):
-    @app.route('/upload', methods=['POST'])
+    @app.route('/upload', methods=['POST', 'OPTIONS'])
     def upload_file():
         try:
             if 'file' not in request.files:

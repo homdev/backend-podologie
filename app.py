@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 import logging
 from app.utils.model_loader import download_model
@@ -34,9 +34,19 @@ CORS(app, resources={
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "expose_headers": ["Content-Range", "X-Content-Range"],
-        "supports_credentials": True
+        "supports_credentials": False
     }
 })
+
+# Middleware pour les en-têtes CORS
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    if origin == "https://dashboard-podologie.netlify.app":
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
 
 create_routes(app)
 
