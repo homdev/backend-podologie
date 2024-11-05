@@ -26,6 +26,7 @@ COPY . .
 
 RUN mkdir -p static/upload static/processed app/models
 
+ENV PYTHONPATH=/app
 ENV PORT=5000
 ENV PYTHONUNBUFFERED=1
 
