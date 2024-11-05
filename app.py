@@ -26,7 +26,6 @@ if not os.path.exists(model_path):
 # CORS configuration
 ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,https://dashboard-podologie.netlify.app,https://backend-podologie-production.up.railway.app').split(',')
 
-
 create_routes(app)
 
 if __name__ == "__main__":
