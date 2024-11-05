@@ -21,4 +21,4 @@ ENV PYTHONPATH=/app
 ENV PORT=5000
 ENV PYTHONUNBUFFERED=1
 
-CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "300", "--preload", "--log-file", "-"]
+CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "300", "--preload", "--log-file", "-", "--log-level", "debug"]
