@@ -15,15 +15,12 @@ def download_model():
     
     if not os.path.exists(model_path):
         logger.info("Téléchargement du modèle U2NET...")
-        file_id = "11nsdLnQIR2JxxAqnclqZJ7lqINODTANK"
-        url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, model_path, quiet=False)
+        url = "https://www.dropbox.com/scl/fi/o97mt8jknqnk7umggkn1k/u2net.pth?rlkey=wsnfn5tusvxm7ec1vdjac07og&st=i3yhdwqs&dl=0"  # Remplacez par l'URL directe
         try:
             gdown.download(url, model_path, quiet=False)
             logger.info("Modèle téléchargé avec succès")
         except Exception as e:
             logger.error(f"Erreur lors du téléchargement du modèle: {str(e)}")
-            # Afficher une erreur explicite si le téléchargement échoue
             raise FileNotFoundError("Le modèle n'a pas pu être téléchargé. Vérifiez les permissions.")
     else:
         logger.info("Modèle U2NET déjà présent")
@@ -35,5 +32,5 @@ def download_model():
     except Exception as e:
         logger.error(f"Erreur lors du chargement du modèle: {str(e)}")
         if os.path.exists(model_path):
-            os.remove(model_path)  # Supprime le fichier uniquement s'il existe
+            os.remove(model_path)
         raise FileNotFoundError("Le fichier modèle est corrompu ou non compatible.")
