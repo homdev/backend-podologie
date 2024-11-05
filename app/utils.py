@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from torchvision import transforms
+from app.utils.model_loader import download_model
 from app.models.u2net import U2NET
 import os
 import logging
@@ -19,13 +20,12 @@ class ImageProcessingError(Exception):
 def load_model():
     """Charge le modèle U2NET avec vérification préalable et gestion des erreurs"""
     try:
-        # Chemin vers le modèle
         model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/u2net.pth')
         
-        # Téléchargement si nécessaire
-        download_model()
+        # Téléchargement si le fichier n'existe pas
+        if not os.path.exists(model_path):
+            download_model()
         
-        # Chargement du modèle
         u2net = U2NET(3, 1)
         u2net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True))
         u2net.eval()
