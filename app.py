@@ -24,29 +24,8 @@ if not os.path.exists(model_path):
         raise
 
 # CORS configuration
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "http://localhost:3000",
-            "https://dashboard-podologie.netlify.app",
-            "https://backend-podologie-production.up.railway.app"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "expose_headers": ["Content-Range", "X-Content-Range"],
-        "supports_credentials": False
-    }
-})
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,https://dashboard-podologie.netlify.app,https://backend-podologie-production.up.railway.app').split(',')
 
-# Middleware pour les en-têtes CORS
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin')
-    if origin == "https://dashboard-podologie.netlify.app":
-        response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    return response
 
 create_routes(app)
 
