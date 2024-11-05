@@ -17,14 +17,15 @@ class ImageProcessingError(Exception):
     pass
 
 def load_model():
-    """Charge le modèle U2NET avec gestion des erreurs"""
+    """Charge le modèle U2NET avec vérification préalable et gestion des erreurs"""
     try:
-        # Utilisation du chemin absolu correct
+        # Chemin vers le modèle
         model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/u2net.pth')
-        if not os.path.exists(model_path):
-            from .model_loader import download_model
-            download_model()
         
+        # Téléchargement si nécessaire
+        download_model()
+        
+        # Chargement du modèle
         u2net = U2NET(3, 1)
         u2net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True))
         u2net.eval()
