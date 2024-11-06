@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from torchvision import transforms
 from app.utils.model_loader import download_model
-from app.models.u2net import U2NET
+from app.models.model_singleton import U2NetModel
 import os
 import logging
 from typing import Tuple, Optional
@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 class ImageProcessingError(Exception):
     """Exception personnalisée pour les erreurs de traitement d'image"""
     pass
+
+# Initialisation du modèle comme variable globale
+u2net = U2NetModel()
 
 def load_model():
     """Charge le modèle U2NET avec vérification préalable et gestion des erreurs"""
