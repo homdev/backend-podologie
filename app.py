@@ -3,7 +3,7 @@ from flask import Flask
 from flask_cors import CORS
 import logging
 from app.utils.model_loader import download_model
-
+from app.routes import create_routes
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,8 @@ if not os.path.exists(model_path):
 
 # CORS configuration
 CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://dashboard-podologie.netlify.app"]}})
+
+create_routes(app)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
