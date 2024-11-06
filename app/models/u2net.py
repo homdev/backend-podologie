@@ -11,10 +11,8 @@ class REBNCONV(nn.Module):
         self.relu_s1 = nn.ReLU(inplace=True)
 
     def forward(self,x):
-
         hx = x
         xout = self.relu_s1(self.bn_s1(self.conv_s1(hx)))
-
         return xout
 
 ## upsample tensor 'src' to have the same spatial size with tensor 'tar'

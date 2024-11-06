@@ -1,5 +1,6 @@
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from app.utils import remove_background, split_feet, save_image, ImageProcessingError
+from app.utils.model_loader import get_project_root
 import os
 from werkzeug.utils import secure_filename
 import logging
@@ -31,6 +32,23 @@ def create_routes(app):
     @app.route('/upload', methods=['POST'])
     def upload_file():
         try:
+            # Obtenir le chemin racine du projet
+            project_root = get_project_root()
+            
+            # Création des dossiers avec chemins absolus
+            upload_folder = os.path.join(project_root, 'static', 'upload')
+            processed_folder = os.path.join(project_root, 'static', 'processed')
+            
+            try:
+                os.makedirs(upload_folder, exist_ok=True)
+                os.makedirs(processed_folder, exist_ok=True)
+            except Exception as e:
+                logger.error(f"Erreur lors de la création des dossiers: {str(e)}")
+                return jsonify({
+                    'error': 'Erreur serveur',
+                    'details': 'Impossible de créer les dossiers de stockage'
+                }), 500
+
             # Vérification de base du fichier
             if 'file' not in request.files:
                 return jsonify({
@@ -53,21 +71,7 @@ def create_routes(app):
                     'details': error_message
                 }), 400
 
-            # Création des dossiers
-            upload_folder = os.path.join('static', 'upload')
-            processed_folder = os.path.join('static', 'processed')
-            
-            try:
-                os.makedirs(upload_folder, exist_ok=True)
-                os.makedirs(processed_folder, exist_ok=True)
-            except Exception as e:
-                logger.error(f"Erreur lors de la création des dossiers: {str(e)}")
-                return jsonify({
-                    'error': 'Erreur serveur',
-                    'details': 'Impossible de créer les dossiers de stockage'
-                }), 500
-
-            # Sauvegarde sécurisée du fichier
+            # Sauvegarde sécurisée du fichier avec chemins absolus
             filename = secure_filename(file.filename)
             original_path = os.path.join(upload_folder, filename)
             
@@ -96,24 +100,24 @@ def create_routes(app):
                 left_foot_filename = 'left_' + filename
                 right_foot_filename = 'right_' + filename
 
-                # Chemins des fichiers traités
-                processed_path = os.path.join(processed_folder, processed_filename)
-                left_foot_path = os.path.join(processed_folder, left_foot_filename)
-                right_foot_path = os.path.join(processed_folder, right_foot_filename)
+                # Chemins des fichiers traités avec chemins absolus
+                processed_path = os.path.join(processed_folder, f'processed_{filename}')
+                left_foot_path = os.path.join(processed_folder, f'left_{filename}')
+                right_foot_path = os.path.join(processed_folder, f'right_{filename}')
 
                 # Sauvegarde des images traitées
                 save_image(processed_image, processed_path)
                 save_image(left_foot, left_foot_path)
                 save_image(right_foot, right_foot_path)
 
-                # Construction des URLs
+                # Construction des URLs avec les chemins relatifs
                 base_url = request.host_url.rstrip('/')
                 return jsonify({
                     'success': True,
                     'original_image': f'{base_url}/static/upload/{filename}',
-                    'processed_image': f'{base_url}/static/processed/{processed_filename}',
-                    'left_foot': f'{base_url}/static/processed/{left_foot_filename}',
-                    'right_foot': f'{base_url}/static/processed/{right_foot_filename}'
+                    'processed_image': f'{base_url}/static/processed/processed_{filename}',
+                    'left_foot': f'{base_url}/static/processed/left_{filename}',
+                    'right_foot': f'{base_url}/static/processed/right_{filename}'
                 }), 200
 
             except ImageProcessingError as e:
@@ -144,4 +148,24 @@ def create_routes(app):
             'status': 'healthy',
             'model_loaded': os.path.exists(model_path),
             'version': '1.0.0'
+        })
+
+    @app.route('/test-static')
+    def test_static():
+        """Route de test pour vérifier l'accès aux fichiers statiques"""
+        project_root = get_project_root()
+        static_folders = {
+            'upload': os.path.join(project_root, 'static', 'upload'),
+            'processed': os.path.join(project_root, 'static', 'processed')
+        }
+        
+        files = {
+            folder: os.listdir(path) 
+            for folder, path in static_folders.items()
+        }
+        
+        return jsonify({
+            'static_folders': static_folders,
+            'files': files,
+            'root_path': project_root
         })

@@ -3,8 +3,9 @@ import cv2
 import numpy as np
 from PIL import Image
 from torchvision import transforms
-from app.utils.model_loader import download_model
+from app.utils.model_loader import download_model, get_project_root
 from app.models.model_singleton import U2NetModel
+from app.models.u2net import U2NET
 import os
 import logging
 from typing import Tuple, Optional
@@ -23,16 +24,16 @@ u2net = U2NetModel()
 def load_model():
     """Charge le modèle U2NET avec vérification préalable et gestion des erreurs"""
     try:
-        model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/u2net.pth')
+        model_path = os.path.join(get_project_root(), 'models', 'u2net.pth')
         
         # Téléchargement si le fichier n'existe pas
         if not os.path.exists(model_path):
             download_model()
         
-        u2net = U2NET(3, 1)
-        u2net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True))
-        u2net.eval()
-        return u2net
+        model = U2NET(3, 1)
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True))
+        model.eval()
+        return model
     except Exception as e:
         logger.error(f"Erreur lors du chargement du modèle: {str(e)}")
         raise ImageProcessingError("Impossible de charger le modèle de traitement d'image")

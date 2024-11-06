@@ -20,13 +20,16 @@ RUN pip install --no-cache-dir \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+RUN mkdir -p static/upload static/processed models \
+    && chmod -R 755 static
 
-RUN mkdir -p static/upload static/processed models
+COPY . .
 
 ENV PORT=5000
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=wsgi.py
 ENV FLASK_ENV=production
+
+RUN chmod -R 755 static
 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "wsgi:app"]
