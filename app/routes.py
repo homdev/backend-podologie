@@ -1,5 +1,5 @@
 from flask import request, jsonify, current_app
-from app.utils import remove_background, split_feet_improved, save_image, ImageProcessingError
+from app.utils import remove_background, split_feet_improved, place_on_a4_canvas, save_image, process_and_save_image, ImageProcessingError
 from app.utils.model_loader import get_project_root
 import os
 from werkzeug.utils import secure_filename
@@ -76,15 +76,24 @@ def create_routes(app):
             # Sauvegarde de l'image traitée
             start_save_processed = time.time()
             save_image(processed_image, processed_path)
+            process_and_save_image(processed_image, processed_path)
             logger.info(f"Sauvegarde de l'image traitée: {time.time() - start_save_processed:.2f} secondes")
 
             # Séparation et sauvegarde des pieds
             start_split = time.time()
             left_foot, right_foot = split_feet_improved(processed_image)
+            
+            # Sauvegarder d'abord les images séparées
             if left_foot is not None:
                 save_image(left_foot, left_foot_path)
+                # Puis traiter l'image sauvegardée
+                process_and_save_image(left_foot, left_foot_path, side='left')
+                
             if right_foot is not None:
                 save_image(right_foot, right_foot_path)
+                # Puis traiter l'image sauvegardée
+                process_and_save_image(right_foot, right_foot_path, side='right')
+                
             logger.info(f"Séparation et sauvegarde des pieds: {time.time() - start_split:.2f} secondes")
 
             # Préparation de la réponse

@@ -484,7 +484,7 @@ def isolate_foot(image: np.ndarray, side: str = 'right') -> np.ndarray:
     coords = cv2.findNonZero(mask)
     if coords is not None:
         x, y, w, h = cv2.boundingRect(coords)
-        margin = 3
+        margin = 2
         x = max(0, x - margin)
         y = max(0, y - margin)
         w = min(width - x, w + 2 * margin)
@@ -492,26 +492,85 @@ def isolate_foot(image: np.ndarray, side: str = 'right') -> np.ndarray:
         result = result[y:y+h, x:x+w]
     
     return result
+
+def verify_dimensions(image: np.ndarray, original_width: float, original_height: float, dpi: int = 120):
+    """Vérifie que l'image a les mêmes dimensions en centimètres que les dimensions d'origine."""
+    width_pixels, height_pixels = image.shape[1], image.shape[0]
+    
+    # Convertir les dimensions en pixels à cm pour l'impression
+    width_cm = width_pixels / dpi * 2.54
+    height_cm = height_pixels / dpi * 2.54
+    
+    print(f"Dimensions calculées : {width_cm:.2f} cm x {height_cm:.2f} cm")
+    print(f"Dimensions attendues : {original_width} cm x {original_height} cm")
+    
+    if abs(width_cm - original_width) < 0.1 and abs(height_cm - original_height) < 0.1:
+        print("Les dimensions sont correctes.")
+    else:
+        print("Les dimensions ne correspondent pas aux attentes.")
+
+def place_on_a4_canvas(image: np.ndarray) -> Image.Image:
+    """Place l'image sur un canevas A4 en conservant l'échelle réelle"""
+    # Dimensions A4 en pixels à 120 DPI
+    A4_DPI = 120
+    A4_WIDTH_PX = int(210 * A4_DPI / 25.4)  # 210mm en pixels
+    A4_HEIGHT_PX = int(297 * A4_DPI / 25.4)  # 297mm en pixels
+    
+    # Création du canevas A4
+    a4_canvas = Image.new("RGBA", (A4_WIDTH_PX, A4_HEIGHT_PX), (255, 255, 255, 0))
+    
+    # Conversion de l'image d'entrée en Image PIL
+    foot_img = Image.fromarray(image)
+    
+    # Calcul de la taille cible pour un pied standard (environ 25cm de longueur)
+    TARGET_FOOT_LENGTH_CM = 25.0  # Longueur standard d'un pied
+    target_height_px = int(TARGET_FOOT_LENGTH_CM * A4_DPI / 2.54)
+    
+    # Calcul du ratio pour redimensionner l'image
+    current_height = foot_img.height
+    scale_factor = target_height_px / current_height
+    
+    # Redimensionnement de l'image en conservant les proportions
+    new_width = int(foot_img.width * scale_factor)
+    new_height = target_height_px
+    foot_img = foot_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    
+    # Centrage de l'image sur le canevas
+    x_offset = (A4_WIDTH_PX - new_width) // 2
+    y_offset = (A4_HEIGHT_PX - new_height) // 2
+    
+    # Collage de l'image sur le canevas
+    a4_canvas.paste(foot_img, (x_offset, y_offset), foot_img)
+    
+    # Ajout des métadonnées DPI
+    a4_canvas.info['dpi'] = (A4_DPI, A4_DPI)
+    
+    return a4_canvas
+
         
 def process_and_save_image(image_path: str, output_path: str, side: str = 'right'):
-
     # Image originale
     original = np.array(Image.open(image_path))
-    print("1. Valeurs RGB originales:", original[:,:,:3].mean(axis=(0,1)))
+    logger.info("Dimensions de l'image originale :")
+    verify_dimensions(original, 21.0, 29.7)  # Dimensions A4 en cm
     
-    # Après remove_background
+    # Après remove_background et nettoyage
     processed = remove_background(image_path)
-    print("2. Valeurs RGB après remove_background:", processed[:,:,:3].mean(axis=(0,1)))
-
-    
-    # Après clean_transparency
     cleaned = clean_transparency(processed)
-    print("3. Valeurs RGB après clean_transparency:", cleaned[:,:,:3].mean(axis=(0,1)))
     
     # Isolation du pied spécifié
     isolated_foot = isolate_foot(cleaned, side)
+    logger.info("Dimensions après isolation du pied :")
+    verify_dimensions(isolated_foot, 21.0, 29.7)  # Dimensions A4 en cm
     
-    # Avant sauvegarde
-    print("4. Valeurs RGB avant sauvegarde:", isolated_foot[:,:,:3].mean(axis=(0,1)))
+    # Place le pied sur le canevas A4 en conservant l'échelle 1:1
+    a4_canvas = place_on_a4_canvas(isolated_foot)
     
-    save_image(isolated_foot, output_path)
+    # Vérification finale des dimensions
+    logger.info("Dimensions finales sur le canevas A4 :")
+    verify_dimensions(np.array(a4_canvas), 21.0, 29.7)
+    
+    # Sauvegarde finale avec DPI correct
+    pil_image = Image.fromarray(np.array(a4_canvas))
+    pil_image.save(output_path, 'PNG', dpi=(120, 120))
+
