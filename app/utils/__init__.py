@@ -1,4 +1,4 @@
-from .image_processing import remove_background, split_feet_improved, create_adaptive_mask, calculate_foot_masses, save_image, isolate_foot, ImageProcessingError, clean_foot_image, crop_to_content, adaptive_contrast_brightness, enhance_mask_edges, refine_mask, refine_and_clean_mask, correct_color_cast, process_and_save_image
+from .image_processing import remove_background, place_on_a4_canvas, verify_dimensions, split_feet_improved, create_adaptive_mask, calculate_foot_masses, save_image, isolate_foot, ImageProcessingError, clean_foot_image, crop_to_content, adaptive_contrast_brightness, enhance_mask_edges, refine_mask, refine_and_clean_mask, correct_color_cast, process_and_save_image, find_separation_valley
 from .model_loader import download_model
 
 __all__ = [
@@ -18,5 +18,9 @@ __all__ = [
     'process_and_save_image',
     'isolate_foot',
     'create_adaptive_mask',
-    'calculate_foot_masses'
+    'calculate_foot_masses',
+    'find_separation_valley',
+    'place_on_a4_canvas',
+    'verify_dimensions',
+    
 ]

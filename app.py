@@ -26,7 +26,7 @@ def create_app():
 
     # CORS configuration
     CORS(flask_app, resources={r"/*": {
-        "origins": ["http://localhost:3000", "https://dashboard-podologie.netlify.app"],
+        "origins": ["http://localhost:3001", "https://dashboard-podologie.netlify.app"],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }})
