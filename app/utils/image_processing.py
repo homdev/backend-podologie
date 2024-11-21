@@ -523,7 +523,7 @@ def place_on_a4_canvas(image: np.ndarray) -> Image.Image:
     foot_img = Image.fromarray(image)
     
     # Calcul de la taille cible pour un pied standard (environ 25cm de longueur)
-    TARGET_FOOT_LENGTH_CM = 25.0  # Longueur standard d'un pied
+    TARGET_FOOT_LENGTH_CM = 27.0  # Longueur standard d'un pied
     target_height_px = int(TARGET_FOOT_LENGTH_CM * A4_DPI / 2.54)
     
     # Calcul du ratio pour redimensionner l'image
