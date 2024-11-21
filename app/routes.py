@@ -1,5 +1,5 @@
 from flask import request, jsonify, current_app
-from app.utils import remove_background, split_feet_improved, save_image, process_and_save_image, ImageProcessingError
+from app.utils import remove_background, split_feet_improved, save_image, process_and_save_image, place_on_a4_canvas, ImageProcessingError
 from app.utils.model_loader import get_project_root
 import os
 from werkzeug.utils import secure_filename
