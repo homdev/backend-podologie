@@ -76,7 +76,7 @@ def create_routes(app):
             # Sauvegarde de l'image traitée
             start_save_processed = time.time()
             save_image(processed_image, processed_path)
-            process_and_save_image(processed_image, processed_path)
+            process_and_save_image(original_path, processed_path)
             logger.info(f"Sauvegarde de l'image traitée: {time.time() - start_save_processed:.2f} secondes")
 
             # Séparation et sauvegarde des pieds
@@ -87,12 +87,12 @@ def create_routes(app):
             if left_foot is not None:
                 save_image(left_foot, left_foot_path)
                 # Puis traiter l'image sauvegardée
-                process_and_save_image(left_foot, left_foot_path, side='left')
+                process_and_save_image(left_foot_path, left_foot_path, side='left')
                 
             if right_foot is not None:
                 save_image(right_foot, right_foot_path)
                 # Puis traiter l'image sauvegardée
-                process_and_save_image(right_foot, right_foot_path, side='right')
+                process_and_save_image(right_foot_path, right_foot_path, side='right')
                 
             logger.info(f"Séparation et sauvegarde des pieds: {time.time() - start_split:.2f} secondes")
 
