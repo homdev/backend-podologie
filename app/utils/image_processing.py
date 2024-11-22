@@ -352,38 +352,30 @@ def optimize_image_for_web(image: np.ndarray) -> np.ndarray:
     
     return image
 
-def save_image(image: np.ndarray, path: str) -> None:
+def save_image(image, path, dpi=('dpi')):
+    """
+    Sauvegarde une image avec gestion des erreurs et logging.
+    :param image: L'image à sauvegarder, sous forme de tableau numpy ou objet PIL.
+    :param path: Chemin de sauvegarde de l'image.
+    :param dpi: Résolution de l'image en DPI.
+    """
     try:
-        start_time = time.time()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if isinstance(image, np.ndarray):
+            if image.shape[-1] == 4:  # RGBA
+                pil_image = Image.fromarray(image, 'RGBA')
+            else:  # RGB
+                pil_image = Image.fromarray(image, 'RGB')
+        elif isinstance(image, Image.Image):  # Image PIL
+            pil_image = image
+        else:
+            raise ValueError("Format d'image non pris en charge")
         
-        # Debug: vérifier les valeurs avant traitement
-        print("Save_image - Valeurs RGB avant:", image[:,:,:3].mean(axis=(0,1)))
-        
-        # Optimisation avant sauvegarde
-        image = optimize_image_for_web(image)
-        
-        # Conversion directe en PIL sans passer par cv2
-        image_pil = Image.fromarray(image)  # Suppression de cv2.cvtColor
-        print("Save_image - Mode PIL:", image_pil.mode)
-        
-        # Debug: vérifier les valeurs après conversion
-        image_array = np.array(image_pil)
-        print("Save_image - Valeurs RGB après:", image_array[:,:,:3].mean(axis=(0,1)))
-        
-        # Paramètres optimisés pour PNG
-        image_pil.save(
-            path, 
-            'PNG',
-            optimize=True,
-            quality=90,
-            compress_level=3
-        )
-        
-        logger.info(f"Image sauvegardée ({os.path.getsize(path)/1024:.1f}KB) en {time.time() - start_time:.2f}s")
-        
+        pil_image.save(path, 'PNG', optimize=True, dpi=dpi)
+        logger.info(f"Image sauvegardée avec succès : {path}")
     except Exception as e:
-        logger.error(f"Erreur sauvegarde: {str(e)}")
-        raise
+        logger.error(f"Erreur lors de la sauvegarde de l'image {path} : {str(e)}")
+        raise ImageProcessingError(f"Erreur lors de la sauvegarde de l'image : {str(e)}")
     
 def isolate_foot(image: np.ndarray, side: str = 'right') -> np.ndarray:
     """
