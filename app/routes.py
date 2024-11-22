@@ -68,7 +68,42 @@ def create_routes(app):
             # Calcul des DPI basé sur la résolution de l'image A3
             with Image.open(original_path) as img:
                 width, height = img.size
-                # ... calcul des DPI et dimensions comme dans votre version ...
+                logger.info(f"=== Informations image originale ===")
+                logger.info(f"Dimensions en pixels : {width}x{height}")
+                
+                # Dimensions physiques en mm
+                A3_WIDTH_MM = 297
+                A3_HEIGHT_MM = 420
+                MM_TO_INCHES = 25.4
+                
+                # Calcul des dimensions en pouces
+                A3_WIDTH_INCHES = A3_WIDTH_MM / MM_TO_INCHES
+                A3_HEIGHT_INCHES = A3_HEIGHT_MM / MM_TO_INCHES
+                
+                # Calcul des DPI réels pour A3
+                dpi_x = width / A3_WIDTH_INCHES  # pixels par pouce
+                dpi_y = height / A3_HEIGHT_INCHES
+                
+                # Dimensions A4 en mm et pouces
+                A4_WIDTH_MM = 210
+                A4_HEIGHT_MM = 297
+                A4_WIDTH_INCHES = A4_WIDTH_MM / MM_TO_INCHES
+                A4_HEIGHT_INCHES = A4_HEIGHT_MM / MM_TO_INCHES
+                
+                # Calcul des dimensions A4 en pixels pour conserver la même densité
+                a4_width_px = int(A4_WIDTH_INCHES * dpi_x)
+                a4_height_px = int(A4_HEIGHT_INCHES * dpi_y)
+                
+                logger.info(f"=== Calculs détaillés ===")
+                logger.info(f"A3 dimensions physiques : {A3_WIDTH_MM:.1f}x{A3_HEIGHT_MM:.1f} mm")
+                logger.info(f"A3 dimensions pouces : {A3_WIDTH_INCHES:.2f}x{A3_HEIGHT_INCHES:.2f} in")
+                logger.info(f"A3 dimensions pixels : {width}x{height} px")
+                logger.info(f"DPI effectifs : {dpi_x:.2f}x{dpi_y:.2f} px/in")
+                logger.info(f"A4 dimensions physiques : {A4_WIDTH_MM:.1f}x{A4_HEIGHT_MM:.1f} mm")
+                logger.info(f"A4 dimensions pouces : {A4_WIDTH_INCHES:.2f}x{A4_HEIGHT_INCHES:.2f} in")
+                logger.info(f"A4 dimensions pixels : {a4_width_px}x{a4_height_px} px")
+                logger.info(f"Ratio A4/A3 : {A4_WIDTH_MM/A3_WIDTH_MM:.3f}")
+                logger.info(f"Taille physique d'un pixel : {25.4/dpi_x:.3f}x{25.4/dpi_y:.3f} mm")
 
             # Traitement de l'image
             start_time = time.time()
