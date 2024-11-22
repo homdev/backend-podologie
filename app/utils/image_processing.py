@@ -9,7 +9,6 @@ from app.models.u2net import U2NET
 import os
 import logging
 from typing import Tuple, Optional
-from skimage import filters
 import time
 from functools import wraps
 
@@ -219,8 +218,13 @@ def find_separation_valley(alpha_channel: np.ndarray) -> int:
     # Création de l'histogramme vertical
     histogram = np.sum(alpha_channel, axis=0)
     
-    # Lissage de l'histogramme pour réduire le bruit
-    histogram_smooth = filters.gaussian(histogram, sigma=5)
+    # Lissage de l'histogramme avec cv2.GaussianBlur au lieu de filters.gaussian
+    # Conversion de l'histogramme en format compatible avec cv2.GaussianBlur
+    histogram_2d = histogram.reshape(-1, 1)
+    # Application du flou gaussien
+    histogram_smooth_2d = cv2.GaussianBlur(histogram_2d.astype(np.float32), (1, 11), 5)
+    # Reconversion en 1D
+    histogram_smooth = histogram_smooth_2d.reshape(-1)
     
     # Trouver tous les minimums locaux
     valleys = []
@@ -547,7 +551,58 @@ def place_on_a4_canvas(image: np.ndarray) -> Image.Image:
     
     return a4_canvas
 
+def create_a4_image_with_scale(image, output_path, dpi_x, dpi_y):
+    try:
+        if not isinstance(image, Image.Image):
+            image = Image.fromarray(image)
         
+        # Dimensions originales
+        original_width_px, original_height_px = image.size
+        logger.info(f"Dimensions image entrée : {original_width_px}x{original_height_px}")
+        
+        # Dimensions physiques en mm
+        A3_WIDTH_MM = 297
+        A3_HEIGHT_MM = 420
+        A4_WIDTH_MM = 210
+        A4_HEIGHT_MM = 297
+        MM_TO_INCHES = 25.4
+        
+        # Calcul de la taille réelle des pieds en mm
+        foot_width_mm = (original_width_px / dpi_x) * MM_TO_INCHES
+        foot_height_mm = (original_height_px / dpi_y) * MM_TO_INCHES
+        
+        logger.info(f"Taille réelle des pieds : {foot_width_mm:.1f}x{foot_height_mm:.1f} mm")
+        
+        # On garde la même taille physique pour A4
+        new_dpi_x = dpi_x
+        new_dpi_y = dpi_y
+        
+        # Dimensions en pixels pour A4 (même taille physique)
+        new_width_px = original_width_px
+        new_height_px = original_height_px
+        
+        # Création de l'image A4
+        a4_width_px = int((A4_WIDTH_MM / MM_TO_INCHES) * new_dpi_x)
+        a4_height_px = int((A4_HEIGHT_MM / MM_TO_INCHES) * new_dpi_y)
+        a4_image = Image.new("RGBA", (a4_width_px, a4_height_px), (255, 255, 255, 255))
+        
+        # Centrage
+        x_offset = (a4_width_px - new_width_px) // 2
+        y_offset = (a4_height_px - new_height_px) // 2
+        
+        # Collage centré
+        a4_image.paste(image, (x_offset, y_offset), image)
+        
+        # Sauvegarde avec les DPI originaux
+        a4_image.save(output_path, "PNG", dpi=(new_dpi_x, new_dpi_y))
+        logger.info(f"Image A4 générée : {output_path}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de la création du fichier A4 : {e}")
+        raise ImageProcessingError(f"Erreur lors de la création du fichier A4 : {e}")
+
 def process_and_save_image(image_path: str, output_path: str, side: str = 'right'):
     # Image originale
     original = np.array(Image.open(image_path))
