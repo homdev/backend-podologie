@@ -138,6 +138,7 @@ def timing_decorator(func):
     return wrapper
 
 def remove_background(image_path: str) -> np.ndarray:
+    logger.info("=== Début suppression du fond ===")
     try:
         # 1. Chargement de l'image
         original_image = Image.open(image_path)
@@ -180,6 +181,7 @@ def remove_background(image_path: str) -> np.ndarray:
         print("Vérification finale - Valeurs RGB min/max:", 
               result_array[:,:,:3].min(), result_array[:,:,:3].max())
         
+        logger.info(f"Dimensions après suppression du fond: {result_array.shape}")
         return result_array
 
     except Exception as e:
@@ -278,61 +280,39 @@ def create_adaptive_mask(height: int, width: int, split_point: int,
     
     return mask
 
-def split_feet_improved(image: np.ndarray) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+def verify_a3_dimensions(image: np.ndarray) -> Tuple[float, float]:
     """
-    Sépare l'image en deux parties avec une détection intelligente de la ligne de séparation.
+    Vérifie et calcule les facteurs de conversion pour une image A3.
     """
-    try:
-        if image is None:
-            raise ValueError("L'image d'entrée est nulle")
+    height, width = image.shape[:2]
+    
+    # Dimensions A3 en cm
+    A3_WIDTH_CM = 29.7
+    A3_HEIGHT_CM = 42.0
+    
+    # Calcul des facteurs de conversion
+    px_to_cm_x = A3_WIDTH_CM / width
+    px_to_cm_y = A3_HEIGHT_CM / height
+    
+    logger.info(f"Facteurs de conversion A3: {px_to_cm_x:.4f}cm/px x {px_to_cm_y:.4f}cm/px")
+    
+    return px_to_cm_x, px_to_cm_y
 
-        height, width = image.shape[:2]
-        alpha_channel = image[:, :, 3]
-
-        # 1. Trouver le point de séparation optimal
-        split_point = find_separation_valley(alpha_channel)
-        
-        # 2. Vérifier la distribution des masses
-        left_mass, right_mass = calculate_foot_masses(alpha_channel, split_point)
-        mass_ratio = left_mass / (left_mass + right_mass)
-        
-        # Ajuster le point de séparation si la distribution est trop déséquilibrée
-        if not (0.3 < mass_ratio < 0.7):
-            logger.warning("Distribution déséquilibrée détectée, ajustement...")
-            split_point = width // 2
-        
-        # 3. Créer un masque de transition progressif
-        transition_width = min(60, width // 10)  # Adaptatif à la largeur de l'image
-        mask = create_adaptive_mask(height, width, split_point, transition_width)
-        
-        # 4. Créer les images des pieds avec la transition
-        left_foot = image.copy()
-        right_foot = image.copy()
-        
-        # Appliquer les masques avec transition progressive
-        for i in range(4):  # Pour tous les canaux (RGBA)
-            left_foot[:, :, i] = left_foot[:, :, i] * (1 - mask)
-            right_foot[:, :, i] = right_foot[:, :, i] * mask
-        
-        # 5. Nettoyer et recadrer chaque pied
-        left_foot = clean_foot_image(left_foot)
-        right_foot = clean_foot_image(right_foot)
-        
-        # 6. Recadrage intelligent
-        left_foot = crop_to_content(left_foot)
-        right_foot = crop_to_content(right_foot)
-        
-        # 7. Validation finale
-        if left_foot is not None and np.sum(left_foot[:, :, 3]) < 100:
-            left_foot = None
-        if right_foot is not None and np.sum(right_foot[:, :, 3]) < 100:
-            right_foot = None
-            
-        return left_foot, right_foot
-
-    except Exception as e:
-        logger.error(f"Erreur lors de la séparation des pieds: {str(e)}")
-        return None, None
+def split_feet_improved(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Sépare les pieds gauche et droit avec dimensions correctes.
+    """
+    height, width = image.shape[:2]
+    mid_x = width // 2
+    
+    # Séparation avec marge de sécurité
+    left_foot = image[:, :mid_x].copy()
+    right_foot = image[:, mid_x:].copy()
+    
+    # Vérification des dimensions
+    px_to_cm_x, px_to_cm_y = verify_a3_dimensions(image)
+    
+    return left_foot, right_foot
 
 def optimize_image_for_web(image: np.ndarray) -> np.ndarray:
     """Optimise l'image pour le web tout en préservant la qualité."""
@@ -352,7 +332,7 @@ def optimize_image_for_web(image: np.ndarray) -> np.ndarray:
     
     return image
 
-def save_image(image, path, dpi=('dpi')):
+def save_image(image, path, dpi=None):
     """
     Sauvegarde une image avec gestion des erreurs et logging.
     :param image: L'image à sauvegarder, sous forme de tableau numpy ou objet PIL.
@@ -505,89 +485,41 @@ def verify_dimensions(image: np.ndarray, original_width: float, original_height:
     else:
         print("Les dimensions ne correspondent pas aux attentes.")
 
-def place_on_a4_canvas(image: np.ndarray) -> Image.Image:
-    """Place l'image sur un canevas A4 en conservant l'échelle réelle"""
-    # Dimensions A4 en pixels à 120 DPI
-    A4_DPI = 120
-    A4_WIDTH_PX = int(210 * A4_DPI / 25.4)  # 210mm en pixels
-    A4_HEIGHT_PX = int(297 * A4_DPI / 25.4)  # 297mm en pixels
-    
-    # Création du canevas A4
-    a4_canvas = Image.new("RGBA", (A4_WIDTH_PX, A4_HEIGHT_PX), (255, 255, 255, 0))
-    
-    # Conversion de l'image d'entrée en Image PIL
-    foot_img = Image.fromarray(image)
-    
-    # Calcul de la taille cible pour un pied standard (environ 25cm de longueur)
-    TARGET_FOOT_LENGTH_CM = 27.0  # Longueur standard d'un pied
-    target_height_px = int(TARGET_FOOT_LENGTH_CM * A4_DPI / 2.54)
-    
-    # Calcul du ratio pour redimensionner l'image
-    current_height = foot_img.height
-    scale_factor = target_height_px / current_height
-    
-    # Redimensionnement de l'image en conservant les proportions
-    new_width = int(foot_img.width * scale_factor)
-    new_height = target_height_px
-    foot_img = foot_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-    
-    # Centrage de l'image sur le canevas
-    x_offset = (A4_WIDTH_PX - new_width) // 2
-    y_offset = (A4_HEIGHT_PX - new_height) // 2
-    
-    # Collage de l'image sur le canevas
-    a4_canvas.paste(foot_img, (x_offset, y_offset), foot_img)
-    
-    # Ajout des métadonnées DPI
-    a4_canvas.info['dpi'] = (A4_DPI, A4_DPI)
-    
-    return a4_canvas
-
 def create_a4_image_with_scale(image, output_path, dpi_x, dpi_y):
     try:
         if not isinstance(image, Image.Image):
             image = Image.fromarray(image)
         
-        # Dimensions originales
+        # Trouver la zone non transparente réelle du pied
+        if image.mode == 'RGBA':
+            bbox = Image.fromarray(np.array(image)[:,:,3]).getbbox()
+            if bbox:
+                image = image.crop(bbox)
+        
+        # Dimensions originales après crop
         original_width_px, original_height_px = image.size
-        logger.info(f"Dimensions image entrée : {original_width_px}x{original_height_px}")
+        logger.info(f"Dimensions image entrée après crop: {original_width_px}x{original_height_px}")
         
-        # Dimensions physiques en mm
-        A3_WIDTH_MM = 297
-        A3_HEIGHT_MM = 420
-        A4_WIDTH_MM = 210
-        A4_HEIGHT_MM = 297
-        MM_TO_INCHES = 25.4
+        # Dimensions A4 en pixels
+        a4_width_px = int((210 / 25.4) * dpi_x)  # 210mm en pixels
+        a4_height_px = int((297 / 25.4) * dpi_y)  # 297mm en pixels
         
-        # Calcul de la taille réelle des pieds en mm
-        foot_width_mm = (original_width_px / dpi_x) * MM_TO_INCHES
-        foot_height_mm = (original_height_px / dpi_y) * MM_TO_INCHES
+        # Création du canvas A4 blanc
+        a4_image = Image.new("RGBA", (a4_width_px, a4_height_px), (0, 0, 0, 0))
         
-        logger.info(f"Taille réelle des pieds : {foot_width_mm:.1f}x{foot_height_mm:.1f} mm")
+        # Calcul du centrage
+        x_offset = (a4_width_px - original_width_px) // 2
+        y_offset = (a4_height_px - original_height_px) // 2
         
-        # On garde la même taille physique pour A4
-        new_dpi_x = dpi_x
-        new_dpi_y = dpi_y
+        # Ajustement vertical pour placer le pied un peu plus haut sur la page
+        # y_offset = int(y_offset * 0.4)  # Décalage vers le haut de 20%
         
-        # Dimensions en pixels pour A4 (même taille physique)
-        new_width_px = original_width_px
-        new_height_px = original_height_px
-        
-        # Création de l'image A4
-        a4_width_px = int((A4_WIDTH_MM / MM_TO_INCHES) * new_dpi_x)
-        a4_height_px = int((A4_HEIGHT_MM / MM_TO_INCHES) * new_dpi_y)
-        a4_image = Image.new("RGBA", (a4_width_px, a4_height_px), (255, 255, 255, 255))
-        
-        # Centrage
-        x_offset = (a4_width_px - new_width_px) // 2
-        y_offset = (a4_height_px - new_height_px) // 2
-        
-        # Collage centré
-        a4_image.paste(image, (x_offset, y_offset), image)
+        # Collage avec masque alpha pour la transparence
+        a4_image.paste(image, (x_offset, y_offset), image if image.mode == 'RGBA' else None)
         
         # Sauvegarde avec les DPI originaux
-        a4_image.save(output_path, "PNG", dpi=(new_dpi_x, new_dpi_y))
-        logger.info(f"Image A4 générée : {output_path}")
+        a4_image.save(output_path, "PNG", dpi=(dpi_x, dpi_y))
+        logger.info(f"Image A4 générée et centrée : {output_path}")
         
         return True
         
@@ -610,14 +542,47 @@ def process_and_save_image(image_path: str, output_path: str, side: str = 'right
     logger.info("Dimensions après isolation du pied :")
     verify_dimensions(isolated_foot, 21.0, 29.7)  # Dimensions A4 en cm
     
-    # Place le pied sur le canevas A4 en conservant l'échelle 1:1
-    a4_canvas = place_on_a4_canvas(isolated_foot)
-    
-    # Vérification finale des dimensions
-    logger.info("Dimensions finales sur le canevas A4 :")
-    verify_dimensions(np.array(a4_canvas), 21.0, 29.7)
-    
-    # Sauvegarde finale avec DPI correct
-    pil_image = Image.fromarray(np.array(a4_canvas))
-    pil_image.save(output_path, 'PNG', dpi=(120, 120))
+    # Utiliser create_a4_image_with_scale au lieu de place_on_a4_canvas
+    pil_image = Image.fromarray(isolated_foot)
+    create_a4_image_with_scale(pil_image, output_path, 120, 120)  # DPI fixé à 120
 
+def verify_image_dimensions(image: np.ndarray, format_type: str, dpi_x: float, dpi_y: float) -> dict:
+    """
+    Vérifie et retourne les dimensions réelles de l'image.
+    
+    Args:
+        image: Image numpy
+        format_type: "A3" ou "A4"
+        dpi_x: DPI horizontal
+        dpi_y: DPI vertical
+    
+    Returns:
+        dict: Dimensions en cm et en pixels
+    """
+    height, width = image.shape[:2]
+    
+    # Dimensions théoriques en mm
+    if format_type == "A3":
+        real_width_mm = 297
+        real_height_mm = 420
+    else:  # A4
+        real_width_mm = 210
+        real_height_mm = 297
+    
+    # Conversion pixels vers cm
+    width_cm = (width / dpi_x) * 25.4 / 10
+    height_cm = (height / dpi_y) * 25.4 / 10
+    
+    logger.info(f"=== Vérification dimensions {format_type} ===")
+    logger.info(f"Dimensions théoriques: {real_width_mm/10:.1f}x{real_height_mm/10:.1f} cm")
+    logger.info(f"Dimensions calculées: {width_cm:.1f}x{height_cm:.1f} cm")
+    
+    return {
+        "format": format_type,
+        "width_px": width,
+        "height_px": height,
+        "width_cm": width_cm,
+        "height_cm": height_cm,
+        "theoretical_width_cm": real_width_mm/10,
+        "theoretical_height_cm": real_height_mm/10
+    }
