@@ -300,7 +300,7 @@ def verify_a3_dimensions(image: np.ndarray) -> Tuple[float, float]:
 
 def split_feet_improved(image: np.ndarray) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     """
-    Sépare l'image en deux parties avec une détection intelligente de la ligne de séparation.
+    Sépare l'image en deux parties avec une meilleure gestion des pieds collés.
     """
     try:
         if image is None:
@@ -309,68 +309,44 @@ def split_feet_improved(image: np.ndarray) -> Tuple[Optional[np.ndarray], Option
         height, width = image.shape[:2]
         alpha_channel = image[:, :, 3]
 
-        # 1. Amélioration de la détection de la vallée
+        # 1. Détection du point de séparation
         split_point = find_separation_valley(alpha_channel)
         
-        # 2. Calcul plus précis des masses avec une marge de sécurité
-        margin = width // 10  # 10% de la largeur
-        left_mass = np.sum(alpha_channel[:, :split_point-margin])
-        right_mass = np.sum(alpha_channel[:, split_point+margin:])
-        total_mass = left_mass + right_mass
-        
-        if total_mass == 0:
-            logger.warning("Aucun contenu détecté dans l'image")
-            return None, None
-            
-        mass_ratio = left_mass / total_mass
-        
-        # Ajustement plus flexible de la séparation
-        if not (0.30 < mass_ratio < 0.70):  # Seuils plus stricts
-            logger.warning(f"Distribution déséquilibrée détectée ({mass_ratio:.2f}), ajustement...")
-            # Recherche itérative d'un meilleur point de séparation
-            best_split = width // 2
-            best_ratio = abs(0.5 - mass_ratio)
-            
-            for test_point in range(width//3, 2*width//3, width//50):
-                left = np.sum(alpha_channel[:, :test_point])
-                right = np.sum(alpha_channel[:, test_point:])
-                test_ratio = left / (left + right)
-                if abs(0.5 - test_ratio) < best_ratio:
-                    best_ratio = abs(0.5 - test_ratio)
-                    best_split = test_point
-            
-            split_point = best_split
-
-        # 3. Transition progressive améliorée
-        transition_width = min(80, width // 8)  # Transition plus large
-        mask = create_adaptive_mask(height, width, split_point, transition_width)
-        
-        # 4. Création des images avec transition douce
+        # 2. Création des images pour chaque pied
         left_foot = image.copy()
         right_foot = image.copy()
         
-        # Application du masque avec lissage gaussien
-        mask_smooth = cv2.GaussianBlur(mask, (5, 5), 0)
+        # 3. Création du masque de base
+        mask = np.zeros((height, width))
         
-        for i in range(4):
-            left_foot[:, :, i] = left_foot[:, :, i] * (1 - mask_smooth)
-            right_foot[:, :, i] = right_foot[:, :, i] * mask_smooth
+        # 4. Définition de la zone de transition
+        transition_width = width // 40  # Réduit à 12.5% de la largeur
+        start_transition = max(0, split_point - transition_width // 2)
+        end_transition = min(width, split_point + transition_width // 2)
         
-        # 5. Nettoyage amélioré
+        # 5. Remplissage du masque
+        mask[:, :start_transition] = 0  # Zone gauche
+        mask[:, end_transition:] = 1    # Zone droite
+        
+        # 6. Création de la transition progressive
+        x = np.linspace(0, 1, end_transition - start_transition)
+        transition = x.reshape(1, -1)
+        mask[:, start_transition:end_transition] = np.tile(transition, (height, 1))
+        
+        # 7. Application du masque sur les pieds
+        for i in range(4):  # Pour chaque canal (R,G,B,A)
+            left_foot[:, :, i] = left_foot[:, :, i] * (1 - mask)
+            right_foot[:, :, i] = right_foot[:, :, i] * mask
+        
+        # 8. Nettoyage et recadrage
         left_foot = clean_foot_image(left_foot)
         right_foot = clean_foot_image(right_foot)
         
-        # 6. Recadrage intelligent avec marges
-        left_foot = crop_to_content_with_margin(left_foot)
-        right_foot = crop_to_content_with_margin(right_foot)
+        # 9. Recadrage avec marges
+        margin_percent = 0.1  # 10% de marge
+        left_foot = crop_to_content_with_margin(left_foot, margin_percent)
+        right_foot = crop_to_content_with_margin(right_foot, margin_percent)
         
-        # 7. Validation finale plus stricte
-        min_content = 500  # Seuil minimum de contenu
-        if left_foot is not None and np.sum(left_foot[:, :, 3]) < min_content:
-            left_foot = None
-        if right_foot is not None and np.sum(right_foot[:, :, 3]) < min_content:
-            right_foot = None
-            
         return left_foot, right_foot
 
     except Exception as e:
