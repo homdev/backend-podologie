@@ -298,21 +298,111 @@ def verify_a3_dimensions(image: np.ndarray) -> Tuple[float, float]:
     
     return px_to_cm_x, px_to_cm_y
 
-def split_feet_improved(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def split_feet_improved(image: np.ndarray) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     """
-    Sépare les pieds gauche et droit avec dimensions correctes.
+    Sépare l'image en deux parties avec une détection intelligente de la ligne de séparation.
     """
+    try:
+        if image is None:
+            raise ValueError("L'image d'entrée est nulle")
+
+        height, width = image.shape[:2]
+        alpha_channel = image[:, :, 3]
+
+        # 1. Amélioration de la détection de la vallée
+        split_point = find_separation_valley(alpha_channel)
+        
+        # 2. Calcul plus précis des masses avec une marge de sécurité
+        margin = width // 10  # 10% de la largeur
+        left_mass = np.sum(alpha_channel[:, :split_point-margin])
+        right_mass = np.sum(alpha_channel[:, split_point+margin:])
+        total_mass = left_mass + right_mass
+        
+        if total_mass == 0:
+            logger.warning("Aucun contenu détecté dans l'image")
+            return None, None
+            
+        mass_ratio = left_mass / total_mass
+        
+        # Ajustement plus flexible de la séparation
+        if not (0.30 < mass_ratio < 0.70):  # Seuils plus stricts
+            logger.warning(f"Distribution déséquilibrée détectée ({mass_ratio:.2f}), ajustement...")
+            # Recherche itérative d'un meilleur point de séparation
+            best_split = width // 2
+            best_ratio = abs(0.5 - mass_ratio)
+            
+            for test_point in range(width//3, 2*width//3, width//50):
+                left = np.sum(alpha_channel[:, :test_point])
+                right = np.sum(alpha_channel[:, test_point:])
+                test_ratio = left / (left + right)
+                if abs(0.5 - test_ratio) < best_ratio:
+                    best_ratio = abs(0.5 - test_ratio)
+                    best_split = test_point
+            
+            split_point = best_split
+
+        # 3. Transition progressive améliorée
+        transition_width = min(80, width // 8)  # Transition plus large
+        mask = create_adaptive_mask(height, width, split_point, transition_width)
+        
+        # 4. Création des images avec transition douce
+        left_foot = image.copy()
+        right_foot = image.copy()
+        
+        # Application du masque avec lissage gaussien
+        mask_smooth = cv2.GaussianBlur(mask, (5, 5), 0)
+        
+        for i in range(4):
+            left_foot[:, :, i] = left_foot[:, :, i] * (1 - mask_smooth)
+            right_foot[:, :, i] = right_foot[:, :, i] * mask_smooth
+        
+        # 5. Nettoyage amélioré
+        left_foot = clean_foot_image(left_foot)
+        right_foot = clean_foot_image(right_foot)
+        
+        # 6. Recadrage intelligent avec marges
+        left_foot = crop_to_content_with_margin(left_foot)
+        right_foot = crop_to_content_with_margin(right_foot)
+        
+        # 7. Validation finale plus stricte
+        min_content = 500  # Seuil minimum de contenu
+        if left_foot is not None and np.sum(left_foot[:, :, 3]) < min_content:
+            left_foot = None
+        if right_foot is not None and np.sum(right_foot[:, :, 3]) < min_content:
+            right_foot = None
+            
+        return left_foot, right_foot
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la séparation des pieds: {str(e)}")
+        return None, None
+
+def crop_to_content_with_margin(image: np.ndarray, margin_percent: float = 0.1) -> Optional[np.ndarray]:
+    """
+    Recadre l'image avec une marge de sécurité.
+    """
+    if image is None:
+        return None
+        
+    alpha = image[:, :, 3]
+    coords = cv2.findNonZero(alpha)
+    
+    if coords is None:
+        return None
+        
+    x, y, w, h = cv2.boundingRect(coords)
+    
+    # Ajout d'une marge proportionnelle
+    margin_x = int(w * margin_percent)
+    margin_y = int(h * margin_percent)
+    
     height, width = image.shape[:2]
-    mid_x = width // 2
+    x1 = max(0, x - margin_x)
+    y1 = max(0, y - margin_y)
+    x2 = min(width, x + w + margin_x)
+    y2 = min(height, y + h + margin_y)
     
-    # Séparation avec marge de sécurité
-    left_foot = image[:, :mid_x].copy()
-    right_foot = image[:, mid_x:].copy()
-    
-    # Vérification des dimensions
-    px_to_cm_x, px_to_cm_y = verify_a3_dimensions(image)
-    
-    return left_foot, right_foot
+    return image[y1:y2, x1:x2]
 
 def optimize_image_for_web(image: np.ndarray) -> np.ndarray:
     """Optimise l'image pour le web tout en préservant la qualité."""
